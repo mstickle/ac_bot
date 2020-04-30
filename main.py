@@ -13,6 +13,7 @@ async def main():
 
     async with aiohttp.ClientSession() as session:
         test_bot = TelegramBot(config['auth_token'], session)
+        test_bot.offset = await test_bot.get_initial_offset()
         try:
             while True:
                 await test_bot.process_session()

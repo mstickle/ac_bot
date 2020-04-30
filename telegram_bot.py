@@ -7,6 +7,17 @@ class TelegramBot:
         self.session = session
         self.offset = offset
 
+    async def get_initial_offset(self):
+        url = self.url + 'getUpdates'
+        params = {'offset': -1}
+        async with self.session.get(url, params = params) as resp:
+            data = await resp.json()
+
+            updates = data['result']
+            if not updates:
+                return 0
+            return updates[-1]['update_id'] + 1
+
     async def process_session(self):
         update_url = self.url + "getUpdates"
         params = {'offset': self.offset}
@@ -14,18 +25,14 @@ class TelegramBot:
             update = await resp.json()
             if update['ok']:
                 for resp_result in update['result']:
-                    chat_id = await self.get_chat_id(resp_result)
+                    chat_id = resp_result['message']['chat']['id']
+                    chat_text = resp_result['message']['text']
+                    # TODO process text and send message
                     message = await self.send_message(chat_id, 'hello')
-                    self.offset = (await self.get_update_id(resp_result) + 1)
+                    self.offset = (self.get_update_id(resp_result) + 1)
 
-    async def get_chat_id(self, request):
-        return request['message']['chat']['id']
-
-    async def get_update_id(self, request):
+    def get_update_id(self, request):
         return request['update_id']
-
-    async def get_message(self, request):
-        return request['message']
 
     async def send_message(self, chat_id, text):
         send_url = self.url + "sendMessage"
